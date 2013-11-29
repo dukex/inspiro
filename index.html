@@ -1,0 +1,57 @@
+<html>
+  <head>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/masonry/3.1.2/masonry.pkgd.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.10.2/dropbox.min.js"></script>
+    <script>
+      var app = {}
+
+      app._imageTemplate = _.template("<a href='<%= image_url %>' target='_blank' class='item'><img src='<%= image_url %>' /></a>")
+
+      app.imageTemplate = function(image_url){
+        return app._imageTemplate({image_url: image_url})
+      }
+
+      app.addThumb = function(error, data) {
+        url = data.url;
+        item = $(app.imageTemplate(url))
+        $("#container").append(item);
+        app.list.appended(item);
+      };
+
+      app.readUidir = function(error, data) {
+        files = _.reject(data, function(file){ return file == 'index.html' || file == 'thumbs'; });
+        _.each(files, function(file){
+          client.makeUrl("/ui/" + file, {download: true}, app.addThumb);
+          app.list.layout()
+        });
+      }
+
+      $(document).ready(function(){
+        client = new Dropbox.Client({key: 'kykcl0648z2kh0d'})
+        var container = document.querySelector('#container');
+        app.list = new Masonry( container, {
+          itemSelector: '.item',
+          gutter: 10
+        });
+        client.authenticate(function(error, data){
+          client.readdir("/ui", {}, app.readUidir);
+        });
+      });
+    </script>
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/3.14.0/build/cssreset/cssreset-min.css">
+    <style type="text/css">
+      body { background: #444 }
+      #container { width: 1080px; overflow: hidden; margin: 0 auto;}
+      .item { border: 1px solid red; float: left; border: 1px solid #333; margin: 0 0 10px 0; max-width: 250px}
+      .item img { max-width: 250px }
+    </style>
+    <title> Ui </title>
+  </head>
+  <body>
+    <button onclick="app.list.layout()">layout</button>
+    <div id="container">
+    </div>
+  </body>
+</html>
